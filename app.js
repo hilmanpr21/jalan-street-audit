@@ -32,8 +32,6 @@ pin.className = 'fixed-pin';
 pin.innerHTML = '📍';
 document.getElementById('map').appendChild(pin);
 
-
-
 // Track map movement to get center coordinates
 let currentCoordinates = map.getCenter();
 map.on('move', () => {
@@ -70,59 +68,53 @@ document.getElementById('report-form').addEventListener('submit', async (e) => {
   const photoInput = document.getElementById('photo-upload');
   let photoUrl = null;
 
-  let photoFile = null;
+  // Upload photo if present
   if (photoInput && photoInput.files && photoInput.files.length > 0) {
-    photoFile = photoInput.files[0];
-  }
+    const photoFile = photoInput.files[0];
+    const fileName = `${Date.now()}-${photoFile.name}`;
+    const { data, error: uploadError } = await supabase
+      .storage
+      .from('reportphotos')
+      .upload(fileName, photoFile, {
+        contentType: photoFile.type,
+        upsert: false
+      });
 
-  if (photoFile) {
-    try {
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-
-      const { data, error: uploadError } = await supabase
-        .storage
-        .from('issuesphotos')
-        .upload(fileName, photoFile, {
-          contentType: photoFile.type,
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('issuesphotos')
-        .getPublicUrl(fileName);
-
-      photoUrl = publicUrlData.publicUrl;
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Photo upload failed. Please try again.');
+    if (uploadError) {
+      alert('Photo upload failed: ' + uploadError.message);
       return;
     }
+
+    // Get public URL
+    const { data: publicUrlData, error: urlError } = supabase
+      .storage
+      .from('reportphotos')
+      .getPublicUrl(fileName);
+
+    if (urlError) {
+      alert('Could not get image URL: ' + urlError.message);
+      return;
+    }
+    photoUrl = publicUrlData.publicUrl;
   }
 
-  try {
-    const { error } = await supabase
-      .from('reports')
-      .insert([{
-        type,
-        notes,
-        coordinates,
-        photo_url: photoUrl
-      }]);
+  // Insert report to database
+  const { error: insertError } = await supabase
+    .from('reports')
+    .insert([{
+      type,
+      notes,
+      coordinates,
+      photo_url: photoUrl
+    }]);
 
-    if (error) throw error;
-
-    alert('Thank you for your audit!');
-    e.target.reset();
-    const uploadBox = document.querySelector('.upload-box');
-    if (uploadBox) uploadBox.textContent = '+ add photo (optional)';
-    const feedback = document.getElementById('form-feedback');
-    if (feedback) feedback.innerHTML = '';
-  } catch (error) {
-    console.error('Database error:', error);
-    alert('Submission failed. Please check console for details.');
+  if (insertError) {
+    alert('Failed to save report: ' + insertError.message);
+    return;
   }
+
+  alert('Thank you for your audit!');
+  e.target.reset();
+  const uploadBox = document.querySelector('.upload-box');
+  if (uploadBox) uploadBox.textContent = '+ add photo (optional)';
 });
