@@ -52,21 +52,53 @@ function getCurrentLocation() {
 // Form handling
 document.getElementById('report-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
+  const type = document.getElementById('issue-type').value;
+  const notes = document.getElementById('notes').value;
+  const coordinates = getCurrentLocation(); // must return { lat, lng }
+  const photoFile = document.getElementById('photo-upload').files[0];
+
+  let photoUrl = null;
+
+  if (photoFile) {
+    const fileExt = photoFile.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('issuesphotos')
+      .upload(filePath, photoFile);
+
+    if (uploadError) {
+      console.error('Upload failed', uploadError);
+      alert('Photo upload failed.');
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase
+      .storage
+      .from('issuesphoto')
+      .getPublicUrl(filePath);
+
+    photoUrl = publicUrl;
+  }
+
   const { data, error } = await supabase
     .from('reports')
     .insert([{
-      type: document.getElementById('issue-type').value,
-      notes: document.getElementById('notes').value,
-      coordinates: getCurrentLocation()
-    }])
-  
+      type,
+      notes,
+      coordinates,
+      photo_url: photoUrl // can be null
+    }]);
+
   if (error) {
-    console.error('Error:', error)
-    alert('Submission failed! Check console.')
+    console.error('Error:', error);
+    alert('Submission failed!');
   } else {
-    alert('thank you for your report')
-    e.target.reset() // Clear form
+    alert('Thank you for your observations');
+    e.target.reset();
   }
-})
+});
 
