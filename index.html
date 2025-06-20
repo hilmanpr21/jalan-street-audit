@@ -28,12 +28,12 @@
     <div class="form-container">
         <div class="form-container">
           <form id="report-form" class="report-form">
-            <h3 class="form-title">Let's observe together</h3>
+            <h3 class="form-title">Let's Audit Together</h3>
 
             <label for="issue-type" class="form-label">Category:</label>
             <select id="issue-type" required class="form-input">
               <option value="">Select category</option>
-              <option value="security">Security</option>
+              <option value="safety">Safety</option>
               <option value="walkability">Walkability</option>
               <option value="accessibility">Accessibility</option>
             </select>
@@ -41,11 +41,15 @@
             <label for="notes" class="form-label">Detail Description:</label>
             <textarea id="notes" required class="form-input" placeholder="Write details here..."></textarea>
 
-            <label for="photo-upload" class="upload-box">
-              + add photo (optional)
-              <input type="file" id="photo-upload" accept="image/*" style="display: none;">
-            </label>
-
+            <div class="upload-container">
+              <label for="photo-upload" class="upload-box">
+                + add photo (optional)
+                <input type="file" id="photo-upload" accept="image/*" style="display: none;">
+              </label>
+              <div id="filename-display" class="filename-display"></div>
+              <div id="form-feedback"></div>
+            </div>
+            
             <button type="submit" class="submit-button">Submit</button>
           </form>
         </div>

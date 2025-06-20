@@ -49,56 +49,75 @@ function getCurrentLocation() {
   };
 }
 
-// Form handling
+
+// Handle file input label
+document.getElementById('photo-upload').addEventListener('change', function () {
+  const label = document.querySelector('.upload-box');
+  if (this.files.length > 0) {
+    label.textContent = this.files[0].name;
+  } else {
+    label.textContent = '+ add photo (optional)';
+  }
+});
+
+// Handle form submission
 document.getElementById('report-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  e.preventDefault();
 
-  const type = document.getElementById('issue-type').value;
-  const notes = document.getElementById('notes').value;
-  const coordinates = getCurrentLocation(); // must return { lat, lng }
-  const photoFile = document.getElementById('photo-upload').files[0];
+  const type = document.getElementById('issue-type').value;
+  const notes = document.getElementById('notes').value;
+  const coordinates = getCurrentLocation();
+  const photoFile = document.getElementById('photo-upload').files[0];
 
-  let photoUrl = null;
+  let photoUrl = null;
 
-  if (photoFile) {
-    const fileExt = photoFile.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
+  if (photoFile) {
+    try {
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase
-      .storage
-      .from('issuesphotos')
-      .upload(filePath, photoFile);
+      const { data, error: uploadError } = await supabase
+        .storage
+        .from('issuesphotos')
+        .upload(fileName, photoFile, {
+          contentType: photoFile.type,
+          upsert: false
+        });
 
-    if (uploadError) {
-      console.error('Upload failed', uploadError);
-      alert('Photo upload failed.');
-      return;
-    }
+      if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase
-      .storage
-      .from('issuesphoto')
-      .getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('issuesphotos')
+        .getPublicUrl(fileName);
 
-    photoUrl = publicUrl;
-  }
+      photoUrl = publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Photo upload failed. Please try again.');
+      return;
+    }
+  }
 
-  const { data, error } = await supabase
-    .from('reports')
-    .insert([{
-      type,
-      notes,
-      coordinates,
-      photo_url: photoUrl // can be null
-    }]);
+  try {
+    const { error } = await supabase
+      .from('reports')
+      .insert([{
+        type,
+        notes,
+        coordinates,
+        photo_url: photoUrl
+      }]);
 
-  if (error) {
-    console.error('Error:', error);
-    alert('Submission failed!');
-  } else {
-    alert('Thank you for your observations');
-    e.target.reset();
-  }
+    if (error) throw error;
+
+    alert('Thank you for your audit!');
+    e.target.reset();
+    document.querySelector('.upload-box').textContent = '+ add photo (optional)';
+    document.getElementById('form-feedback').innerHTML = '';
+  } catch (error) {
+    console.error('Database error:', error);
+    alert('Submission failed. Please check console for details.');
+  }
 });
 
