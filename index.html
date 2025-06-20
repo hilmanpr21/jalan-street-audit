@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Street Audit Tools</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.css' rel='stylesheet' />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js" type="module"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-content">
+        <img src="assets/Jalan-Logo-05.png" alt="Jalan Logo" class="logo left-logo">
+        <h1 class="title"> </h1>
+        <img src="assets/Kultum-Visual-04.png" alt="Kultum Logo" class="logo right-logo">
+      </div>
+    </header>
+    
+    <div class="map-container" id="map">
+      <!-- Mapbox will render here -->
+    </div>
+    
+    <div class="form-container">
+        <div class="form-container">
+          <form id="report-form" class="report-form">
+            <h3 class="form-title">Let's observe together</h3>
+
+            <label for="issue-type" class="form-label">Category:</label>
+            <select id="issue-type" required class="form-input">
+              <option value="">Select category</option>
+              <option value="security">Security</option>
+              <option value="walkability">Walkability</option>
+              <option value="accessibility">Accessibility</option>
+            </select>
+
+            <label for="notes" class="form-label">Detail Description:</label>
+            <textarea id="notes" required class="form-input" placeholder="Write details here..."></textarea>
+
+            <button type="submit" class="submit-button">Submit</button>
+          </form>
+        </div>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
