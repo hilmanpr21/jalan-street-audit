@@ -52,72 +52,77 @@ function getCurrentLocation() {
 
 // Handle file input label
 document.getElementById('photo-upload').addEventListener('change', function () {
-  const label = document.querySelector('.upload-box');
-  if (this.files.length > 0) {
-    label.textContent = this.files[0].name;
-  } else {
-    label.textContent = '+ add photo (optional)';
-  }
-});
+    const label = document.querySelector('.upload-box');
+    if (this.files.length > 0) {
+      label.textContent = this.files[0].name;
+    } else {
+      label.textContent = '+ add photo (optional)';
+    }
+  });
 
 // Handle form submission
 document.getElementById('report-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  e.preventDefault();
 
-  const type = document.getElementById('issue-type').value;
-  const notes = document.getElementById('notes').value;
-  const coordinates = getCurrentLocation();
-  const photoFile = document.getElementById('photo-upload').files[0];
+  const type = document.getElementById('issue-type').value;
+  const notes = document.getElementById('notes').value;
+  const coordinates = getCurrentLocation();
+  const photoInput = document.getElementById('photo-upload');
+  let photoUrl = null;
 
-  let photoUrl = null;
+  let photoFile = null;
+  if (photoInput && photoInput.files && photoInput.files.length > 0) {
+    photoFile = photoInput.files[0];
+  }
 
-  if (photoFile) {
-    try {
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+  if (photoFile) {
+    try {
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
 
-      const { data, error: uploadError } = await supabase
-        .storage
-        .from('issuesphotos')
-        .upload(fileName, photoFile, {
-          contentType: photoFile.type,
-          upsert: false
-        });
+      const { data, error: uploadError } = await supabase
+        .storage
+        .from('issuesphotos')
+        .upload(fileName, photoFile, {
+          contentType: photoFile.type,
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('issuesphotos')
-        .getPublicUrl(fileName);
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('issuesphotos')
+        .getPublicUrl(fileName);
 
-      photoUrl = publicUrl;
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Photo upload failed. Please try again.');
-      return;
-    }
-  }
+      photoUrl = publicUrlData.publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Photo upload failed. Please try again.');
+      return;
+    }
+  }
 
-  try {
-    const { error } = await supabase
-      .from('reports')
-      .insert([{
-        type,
-        notes,
-        coordinates,
-        photo_url: photoUrl
-      }]);
+  try {
+    const { error } = await supabase
+      .from('reports')
+      .insert([{
+        type,
+        notes,
+        coordinates,
+        photo_url: photoUrl
+      }]);
 
-    if (error) throw error;
+    if (error) throw error;
 
-    alert('Thank you for your audit!');
-    e.target.reset();
-    document.querySelector('.upload-box').textContent = '+ add photo (optional)';
-    document.getElementById('form-feedback').innerHTML = '';
-  } catch (error) {
-    console.error('Database error:', error);
-    alert('Submission failed. Please check console for details.');
-  }
+    alert('Thank you for your audit!');
+    e.target.reset();
+    const uploadBox = document.querySelector('.upload-box');
+    if (uploadBox) uploadBox.textContent = '+ add photo (optional)';
+    const feedback = document.getElementById('form-feedback');
+    if (feedback) feedback.innerHTML = '';
+  } catch (error) {
+    console.error('Database error:', error);
+    alert('Submission failed. Please check console for details.');
+  }
 });
-
